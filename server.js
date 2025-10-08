@@ -13,37 +13,46 @@ app.use(cors({
 
 app.use(express.json());
 
-// MongoDB connection
+// MongoDB connection with better configuration
 const MONGODB_URI = process.env.MONGODB_URI;
 
 console.log('🔗 Attempting MongoDB connection...');
 
-mongoose.connect(MONGODB_URI, {
+// MongoDB connection options
+const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
-.then(() => {
-  console.log('✅ MongoDB Connected Successfully to:', mongoose.connection.name);
-})
-.catch((error) => {
-  console.error('❌ MongoDB Connection Failed:', error.message);
-});
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+};
 
-// MongoDB connection events
-mongoose.connection.on('connected', () => {
-  console.log('📊 MongoDB event - Connected');
-});
+let isConnected = false;
 
-mongoose.connection.on('error', (err) => {
-  console.error('❌ MongoDB event - Error:', err);
-});
+const connectDB = async () => {
+  if (isConnected) {
+    console.log('✅ Using existing MongoDB connection');
+    return;
+  }
 
-mongoose.connection.on('disconnected', () => {
-  console.log('⚠️ MongoDB event - Disconnected');
-});
+  try {
+    await mongoose.connect(MONGODB_URI, mongooseOptions);
+    isConnected = mongoose.connection.readyState === 1;
+    
+    if (isConnected) {
+      console.log('✅ MongoDB Connected Successfully to:', mongoose.connection.name);
+    }
+  } catch (error) {
+    console.error('❌ MongoDB Connection Failed:', error.message);
+    isConnected = false;
+  }
+};
+
+// Connect to DB when server starts
+connectDB();
 
 // Test route
-app.get('/api/test', (req, res) => {
+app.get('/api/test', async (req, res) => {
+  await connectDB(); // Ensure connection for each request in serverless
   const dbStatus = mongoose.connection.readyState;
   const statusText = dbStatus === 1 ? 'connected' : 'disconnected';
   
@@ -56,7 +65,8 @@ app.get('/api/test', (req, res) => {
 });
 
 // Health check route
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  await connectDB(); // Ensure connection for each request
   const dbStatus = mongoose.connection.readyState;
   const statusText = dbStatus === 1 ? 'connected' : 'disconnected';
   
@@ -70,7 +80,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Root route
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+  await connectDB(); // Ensure connection for each request
   const dbStatus = mongoose.connection.readyState;
   const statusText = dbStatus === 1 ? 'connected' : 'disconnected';
   
@@ -87,7 +98,8 @@ app.get('/', (req, res) => {
 });
 
 // Auth routes (placeholder)
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
+  await connectDB(); // Ensure connection for each request
   res.json({ 
     message: '✅ Registration endpoint working!',
     user: req.body,
@@ -96,7 +108,8 @@ app.post('/api/auth/register', (req, res) => {
   });
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
+  await connectDB(); // Ensure connection for each request
   res.json({ 
     message: '✅ Login endpoint working!',
     user: { email: req.body.email },
@@ -123,7 +136,6 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 MongoDB Status: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
