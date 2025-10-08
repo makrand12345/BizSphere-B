@@ -36,7 +36,11 @@ mongoose.connection.on('error', (err) => {
 
 // Test route
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend is working on Vercel!', timestamp: new Date().toISOString() });
+  res.json({ 
+    message: 'Backend is working on Vercel!', 
+    timestamp: new Date().toISOString(),
+    status: 'success'
+  });
 });
 
 // Health check route
@@ -49,18 +53,32 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Auth routes placeholder
+// Auth routes
 app.post('/api/auth/register', (req, res) => {
-  res.json({ message: 'Register endpoint - implement your logic here' });
+  console.log('Register attempt:', req.body);
+  res.json({ 
+    message: 'Registration endpoint working!', 
+    user: req.body,
+    status: 'success'
+  });
 });
 
 app.post('/api/auth/login', (req, res) => {
-  res.json({ message: 'Login endpoint - implement your logic here' });
+  console.log('Login attempt:', req.body);
+  res.json({ 
+    message: 'Login endpoint working!',
+    user: { email: req.body.email },
+    status: 'success'
+  });
 });
 
 // Handle undefined routes
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.originalUrl,
+    method: req.method
+  });
 });
 
 const PORT = process.env.PORT || 5000;
@@ -69,4 +87,4 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-module.exports = app;
+module.exports = app;   
