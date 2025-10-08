@@ -34,9 +34,6 @@ mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
 });
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-
 // Test route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend is working on Vercel!', timestamp: new Date().toISOString() });
@@ -50,6 +47,15 @@ app.get('/api/health', (req, res) => {
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   });
+});
+
+// Auth routes placeholder
+app.post('/api/auth/register', (req, res) => {
+  res.json({ message: 'Register endpoint - implement your logic here' });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  res.json({ message: 'Login endpoint - implement your logic here' });
 });
 
 // Handle undefined routes
