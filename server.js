@@ -81,6 +81,14 @@ app.use('*', (req, res) => {
   });
 });
 
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Backend is working on Vercel!' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', backend: 'running' });
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
