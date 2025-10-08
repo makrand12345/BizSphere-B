@@ -1,64 +1,66 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Improved CORS configuration
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+// CORS configuration
+const corsOptions = {
+  origin: [
+    'https://biz-sphere-f.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
 
-// Handle preflight requests
-app.options('*', cors());
-
-// Middleware
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// MongoDB Connection
-console.log('🔗 Connecting to MongoDB...');
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bizsphere')
-  .then(() => console.log('✅ MongoDB Connected Successfully'))
-  .catch(err => {
-    console.log('❌ MongoDB Connection Error:', err.message);
-  });
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bizsphere', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+mongoose.connection.on('connected', () => {
+  console.log('Connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/products', require('./routes/products'));
 
-// Health check
-app.get('/health', (req, res) => {
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Backend is working on Vercel!', timestamp: new Date().toISOString() });
+});
+
+// Health check route
+app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
-    database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
-    timestamp: new Date().toISOString() 
+    backend: 'running',
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
   });
 });
 
-// Basic routes
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'BizSphere API is running!',
-    version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      admin: '/api/admin',
-      products: '/api/products'
-    }
-  });
+// Handle undefined routes
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
-// Start Server
+const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Health: http://localhost:${PORT}/health`);
-  console.log(`🔐 Auth: http://localhost:${PORT}/api/auth`);
-  console.log(`👑 Admin: http://localhost:${PORT}/api/admin`);
+  console.log(`Server is running on port ${PORT}`);
 });
+
+module.exports = app;
